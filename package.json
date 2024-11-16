@@ -1,0 +1,29 @@
+{
+  "name": "proxy_server",
+  "version": "0.0.1",
+  "description": "Прокси-сервер, через который проходят все запросы к api-шкам",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite-node src/index.ts",
+    "prod:build": "vite build",
+    "prod:start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebChat-team/proxy_server.git"
+  },
+  "author": "Gleb Li",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/WebChat-team/proxy_server/issues"
+  },
+  "homepage": "https://github.com/WebChat-team/proxy_server#readme",
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-node": "^2.1.5",
+    "vite-plugin-node": "^4.0.0"
+  }
+}

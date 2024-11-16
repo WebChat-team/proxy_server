@@ -1,0 +1,12 @@
+
+# node packages
+/node_modules
+package-lock.json
+
+# environment variables
+.env*
+!.env.example
+
+# 
+/.idea
+/dist
