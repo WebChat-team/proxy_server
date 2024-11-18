@@ -1,29 +1,34 @@
 // imports ================================================== //
-import type { ServerResponse, IncomingMessage, Server } from "http";
-import type { ServerAction } from "./types";
+import type { MiddlewareProxyServer } from "./types";
 
 // types ==================================================== //
 interface RouterRules {
-    [key: string]: RegExp
+    [key: string]: string
 }
-interface RouterPath {
-    GET: { [key: string]: ServerAction },
-    POST: { [key: string]: ServerAction },
-    DELETE: { [key: string]: ServerAction },
-    PUT: { [key: string]: ServerAction },
-    PATCH: { [key: string]: ServerAction },
-    OPTIONS: { [key: string]: ServerAction },
-    TRACE: { [key: string]: ServerAction },
-    CONNECT: { [key: string]: ServerAction },
-    HEAD: { [key: string]: ServerAction },
-    ALL: { [key: string]: ServerAction },
+interface RouterPaths {
+    GET: { [key: string]: MiddlewareProxyServer[] },
+    POST: { [key: string]: MiddlewareProxyServer[] },
+    DELETE: { [key: string]: MiddlewareProxyServer[] },
+    PUT: { [key: string]: MiddlewareProxyServer[] },
+    PATCH: { [key: string]: MiddlewareProxyServer[] },
+    OPTIONS: { [key: string]: MiddlewareProxyServer[] },
+    TRACE: { [key: string]: MiddlewareProxyServer[] },
+    CONNECT: { [key: string]: MiddlewareProxyServer[] },
+    HEAD: { [key: string]: MiddlewareProxyServer[] },
+    ALL: { [key: string]: MiddlewareProxyServer[] },
 }
+type RouterMethod = keyof RouterPaths
 
 // main ===================================================== //
+// Маршрутизатор сервера - его задача записывать, хранить и
+// отдавать middlewares (промежуточные обработчики запроса) в
+// соответствии с указаным url и методом http-запроса. При
+// этом url представляет собой регулярное выражение, которое
+// упрощается засчёт правил задаваемых при инициализации роутера
 class Router {
 
     protected rules: RouterRules;
-    protected paths: RouterPath = {
+    protected paths: RouterPaths = {
         GET: {},
         POST: {},
         DELETE: {},
@@ -40,7 +45,7 @@ class Router {
         this.rules = rules;
     }
 
-    add(method: keyof RouterPath, url: string, callback: ServerAction) {
+    add(method: keyof RouterPaths, url: string, middlewares: MiddlewareProxyServer[] = []) {
 
         // 1. заменяем [name_rules] на правило нашего роутера
         let reqexp_url = url;
@@ -50,42 +55,32 @@ class Router {
         }
 
         // 2. заносим url в нашу "таблицу маршрутизации"
-        this.paths[method][`^${reqexp_url}$`] = callback;
+        this.paths[method][`^${reqexp_url}$`] = middlewares;
 
     }
 
-    async exec(req: IncomingMessage, res: ServerResponse) {
+    get(url: string, method: keyof RouterPaths) {
 
-        const { url, method } = req;
-
-        let action = this.notFound;
-
-        let urls = {
-            ...this.paths[method as keyof typeof this.paths],
+        const searchMiddlewares = {
+            ...this.paths[method],
             ...this.paths["ALL"]
         };
 
-        for (let reqexp_url in urls) {
-            if (url && new RegExp(reqexp_url).test(url)) {
-                action = urls[reqexp_url];
+        const middlewares: MiddlewareProxyServer[] = []; 
+
+        for (let rule in searchMiddlewares) {
+            if (new RegExp(rule).test(url)) {
+                middlewares.push(...searchMiddlewares[rule]);
                 break;
             }
         }
 
-        // @ts-ignore
-        res.notFound = this.notFound;
-        await action(req, res);
+        return middlewares;
 
-    }
-
-    notFound(req: IncomingMessage, res: ServerResponse) {
-        res
-            .writeHead(404)
-            .end();
     }
 
 }
 
 // exports ================================================== //
 export default Router;
-export type { RouterRules, RouterPath }
+export type { RouterRules, RouterMethod }

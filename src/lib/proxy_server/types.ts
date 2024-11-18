@@ -1,9 +1,10 @@
 // imports ================================================== //
 import type { IncomingMessage, ServerResponse } from "http";
+import { RouterMethod } from "./router";
 
 // main ===================================================== //
-type ServerActionRequest = IncomingMessage & { body?: string } 
-type ServerAction = (req: ServerActionRequest, res: ServerResponse) => Promise<any>
+type ProxyServerRequest = IncomingMessage & { body?: string, to: string, method: RouterMethod, url: string } 
+type MiddlewareProxyServer = (requestProxy: ProxyServerRequest, responseProxy: ServerResponse) => Promise<any>
 
 // exports ================================================== //
-export type { ServerAction, ServerActionRequest };
+export type { MiddlewareProxyServer, ProxyServerRequest };
