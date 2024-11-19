@@ -2,6 +2,7 @@
 // libs ----------------------------------------------------- //
 import Router from "./router";
 import { createServer } from "http";
+import { getSetToForRequestProxy, notFound, proxing, checkAuth, parseCookie } from "./auxiliaryMiddlewares";
 
 // types ---------------------------------------------------- //
 import type { RouterRules } from "./router";
@@ -40,44 +41,6 @@ class ProxyServer {
     this.router = new Router(rulesRouter);
   }
 
-  private specialMiddlewares: Record<"notFound" | "proxing", MiddlewareProxyServer> = {
-    async proxing(requestProxy, responseProxy) {
-
-      try {
-
-        const responseFromServer = await fetch(
-          requestProxy.to,
-          {
-            method: requestProxy.method,
-            headers: requestProxy.headers as HeadersInit || undefined,
-            body: requestProxy.body || undefined
-          }
-        );
-  
-        const headers = Object.fromEntries(responseFromServer.headers);
-        delete headers["content-encoding"];
-        delete headers["content-length"];
-        delete headers["host"];
-        delete headers["connection"];
-  
-        responseProxy.writeHead(responseFromServer.status, headers);
-        responseProxy.end(await responseFromServer.text());
-
-      } catch (error) {
-        console.error("Error during proxying:", error);
-        responseProxy
-          .writeHead(502, { "Content-Type": "text/plain" })
-          .end("Bad Gateway")
-      }
-
-    },
-    async notFound(requestProxy, responseProxy) {
-      responseProxy
-        .writeHead(404)
-        .end();
-    },
-  }
-
   private requestProcessing(requestProxy: ProxyServerRequest, responseProxy: ServerResponse) {
     requestProxy.body = "";
     requestProxy
@@ -86,7 +49,7 @@ class ProxyServer {
 
         const routeMiddlewares = this.router.get(requestProxy.url, requestProxy.method);
         if (routeMiddlewares.length) {
-          for (const middleware of [...routeMiddlewares, this.specialMiddlewares.proxing]) {
+          for (const middleware of [...routeMiddlewares, proxing]) {
             try {
               await middleware(requestProxy, responseProxy);
               if (responseProxy.writableEnded) return;
@@ -99,21 +62,14 @@ class ProxyServer {
           }
         }
 
-        this.specialMiddlewares.notFound(requestProxy, responseProxy);
+        notFound(requestProxy, responseProxy);
 
       });
   }
 
   public proxy(from: string, to: string, middlewares: MiddlewareProxyServer[] = []) {
-    const setTo: MiddlewareProxyServer = async (requestProxy, responseProxy) => { 
-      let lastIndexWire = from.lastIndexOf("[*]");
-      if (lastIndexWire !== -1) {
-        requestProxy.to = to + requestProxy.url.slice(lastIndexWire);
-      } else {
-        requestProxy.to = to;
-      }
-    };
-    this.router.add("ALL", from, [setTo, ...middlewares]);
+    const setToMiddleware = getSetToForRequestProxy(from, to);
+    this.router.add("ALL", from, [parseCookie, setToMiddleware, ...middlewares]);
   }
   public launch(ip: string, port: number) {
     if (!this.isLaunch) {
@@ -142,3 +98,4 @@ class ProxyServer {
 // exports ================================================== //
 export default ProxyServer;
 export type { RouterRules };
+export { checkAuth };
