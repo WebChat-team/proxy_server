@@ -43,18 +43,32 @@ class ProxyServer {
   private specialMiddlewares: Record<"notFound" | "proxing", MiddlewareProxyServer> = {
     async proxing(requestProxy, responseProxy) {
 
-      const responseFromServer = await fetch(
-        requestProxy.to,
-        {
-          method: requestProxy.method,
-          headers: requestProxy.headers as HeadersInit || undefined,
-          body: requestProxy.body || undefined
-        }
-      );
+      try {
 
-      responseProxy.setHeaders(new Map(responseFromServer.headers));
-      responseProxy.writeHead(responseFromServer.status);
-      responseProxy.end(await responseFromServer.text());
+        const responseFromServer = await fetch(
+          requestProxy.to,
+          {
+            method: requestProxy.method,
+            headers: requestProxy.headers as HeadersInit || undefined,
+            body: requestProxy.body || undefined
+          }
+        );
+  
+        const headers = Object.fromEntries(responseFromServer.headers);
+        delete headers["content-encoding"];
+        delete headers["content-length"];
+        delete headers["host"];
+        delete headers["connection"];
+  
+        responseProxy.writeHead(responseFromServer.status, headers);
+        responseProxy.end(await responseFromServer.text());
+
+      } catch (error) {
+        console.error("Error during proxying:", error);
+        responseProxy
+          .writeHead(502, { "Content-Type": "text/plain" })
+          .end("Bad Gateway")
+      }
 
     },
     async notFound(requestProxy, responseProxy) {
@@ -71,20 +85,34 @@ class ProxyServer {
       .on("end", async () => {
 
         const routeMiddlewares = this.router.get(requestProxy.url, requestProxy.method);
-        if (routeMiddlewares) {
+        if (routeMiddlewares.length) {
           for (const middleware of [...routeMiddlewares, this.specialMiddlewares.proxing]) {
-            await middleware(requestProxy, responseProxy);
-            if (responseProxy.writableEnded) return;
+            try {
+              await middleware(requestProxy, responseProxy);
+              if (responseProxy.writableEnded) return;
+            } catch (error) {
+              console.error(`Middleware error: ${error}`);
+              responseProxy
+                .writeHead(500)
+                .end("Internal Server Error");
+            }
           }
         }
 
-        this.specialMiddlewares.proxing(requestProxy, responseProxy);
+        this.specialMiddlewares.notFound(requestProxy, responseProxy);
 
       });
   }
 
   public proxy(from: string, to: string, middlewares: MiddlewareProxyServer[] = []) {
-    const setTo: MiddlewareProxyServer = async (requestProxy, responseProxy) => { requestProxy.to = to };
+    const setTo: MiddlewareProxyServer = async (requestProxy, responseProxy) => { 
+      let lastIndexWire = from.lastIndexOf("[*]");
+      if (lastIndexWire !== -1) {
+        requestProxy.to = to + requestProxy.url.slice(lastIndexWire);
+      } else {
+        requestProxy.to = to;
+      }
+    };
     this.router.add("ALL", from, [setTo, ...middlewares]);
   }
   public launch(ip: string, port: number) {
@@ -92,13 +120,13 @@ class ProxyServer {
 
       this.isLaunch = true;
 
-      console.log(`Server running at http://${ip}:${port}/`);
+      console.info(`Server running at http://${ip}:${port}/`);
 
       this.server
         .listen(port, ip)
         .on("request", (requestProxy: ProxyServerRequest, responseProxy) => { this.requestProcessing(requestProxy, responseProxy); })
-        .on("close", () => console.log("Server is close"))
-        .on("error", (error) => console.log(error));
+        .on("close", () => console.info("Server is close"))
+        .on("error", (error) => console.error(error));
 
     }
   }
