@@ -1,4 +1,5 @@
 // imports ================================================== //
+import type { IncomingHttpHeaders } from "http";
 import type { MiddlewareProxyServer } from "./types";
 
 // types ==================================================== //
@@ -10,33 +11,20 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
 
     try {
 
-        // request prepare
-        delete requestProxy.headers["connection"];
-        delete requestProxy.headers["host"];
-        delete requestProxy.headers["content-length"];
-        delete requestProxy.headers["cache-control"];
-        requestProxy.headers["origin"] = "http://api.webchat.com";
-
+        // 1. запрос указанному серверу
         const responseFromServer = await fetch(
             requestProxy.to,
             {
                 method: requestProxy.method,
                 credentials: "include",
-                headers: requestProxy.headers as HeadersInit || undefined,
+                headers: getSendHeaders(requestProxy.headers) as HeadersInit || undefined,
                 body: requestProxy.body || undefined
             }
         );
 
-        console.log(responseFromServer.status);
-
-        // response prepare
+        // 2. возврат ответа от сервера клиенту
         const headers = Object.fromEntries(responseFromServer.headers);
-        delete headers["content-encoding"];
-        delete headers["content-length"];
-        delete headers["host"];
-        delete headers["connection"];
-
-        responseProxy.writeHead(responseFromServer.status, headers);
+        responseProxy.writeHead(responseFromServer.status, getSendHeaders(headers));
         responseProxy.end(await responseFromServer.text());
 
     } catch (error) {
@@ -44,6 +32,21 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
         responseProxy
             .writeHead(502, { "Content-Type": "text/plain" })
             .end("Bad Gateway")
+    }
+
+    function getSendHeaders(headers: IncomingHttpHeaders) {
+
+        let copy_headers = {...headers};
+
+        delete copy_headers["content-encoding"];
+        delete copy_headers["content-length"];
+        delete copy_headers["host"];
+        delete copy_headers["connection"];
+        delete copy_headers["cache-control"];
+        copy_headers["origin"] = "http://api.webchat.com";
+
+        return copy_headers;
+
     }
 
 };
@@ -78,8 +81,6 @@ const parseCookie: MiddlewareProxyServer = async (requestProxy, responseProxy) =
 
 // middlewares с внешними зависимостями
 const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
-
-    console.log(requestProxy.cookie);
 
     // 1. проверка наличия и подлинности access токена
     const accessToken = requestProxy.cookie.get("access_token");
@@ -129,12 +130,12 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
     responseProxy
         .writeHead(
             403, "Forbidden",
-            // {
-            //     "set-cookie": [
-            //         `access_token = null; domain = .webchat.com; HttpOnly; path = /;  max-age = 0;`,
-            //         `refresh_token = null; domain = .webchat.com; HttpOnly; path = /;  max-age = 0;`,
-            //     ]
-            // }
+            {
+                "set-cookie": [
+                    `access_token = null; domain = .webchat.com; HttpOnly; path = /; max-age = 0;`,
+                    `refresh_token = null; domain = .webchat.com; HttpOnly; path = /; max-age = 0;`,
+                ]
+            }
         )
         .end("Forbidden 403");
 
