@@ -1,11 +1,15 @@
-import http from 'http';
+// imports ================================================== //
+import ProxyServer, { checkAuth } from "./lib/proxy_server";
 
-const server = http.createServer((req: any, res: any) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello from Vite + Node.js + TypeScript!');
-});
+// main ===================================================== //
+const server = new ProxyServer({ "*": ".*" });
+const { IP, PORT , AUTH_SERVER_ADDRESS, USER_SERVER_ADDRESS} = process.env;
 
-const PORT = process.env.PORT || 3004;
-server.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+server
+    .from(USER_SERVER_ADDRESS!)
+        .listen("/user/[>](register|login)")
+        .listen("/user/[>][*]", [checkAuth]);
+
+server.listen("/auth/[>][*]", AUTH_SERVER_ADDRESS!);
+
+server.launch(IP!, Number(PORT!));
