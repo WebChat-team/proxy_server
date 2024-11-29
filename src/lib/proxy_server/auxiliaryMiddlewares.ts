@@ -16,7 +16,6 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
             requestProxy.to,
             {
                 method: requestProxy.method,
-                credentials: "include",
                 headers: getSendHeaders(requestProxy.headers) as HeadersInit || undefined,
                 body: requestProxy.body || undefined
             }
@@ -58,12 +57,7 @@ const notFound: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
 const getSetToForRequestProxy: setToType = (from, to) => {
 
     return async function (requestProxy, responseProxy) {
-        let lastIndexWire = from.lastIndexOf("[*]");
-        if (lastIndexWire !== -1) {
-            requestProxy.to = to + "/" + requestProxy.url.slice(lastIndexWire);
-        } else {
-            requestProxy.to = to;
-        }
+        requestProxy.to = to + "/" + requestProxy.url.slice(from.indexOf("[>]"));
     };
 
 };
