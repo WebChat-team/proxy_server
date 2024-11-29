@@ -67,10 +67,24 @@ class ProxyServer {
       });
   }
 
-  public proxy(from: string, to: string, middlewares: MiddlewareProxyServer[] = []) {
-    const setToMiddleware = getSetToForRequestProxy(from, to);
-    this.router.add("ALL", from, [parseCookie, setToMiddleware, ...middlewares]);
+  // работа с запросами
+  public from(to: string) {
+
+    return {
+      listen: (from: string, middlewares: MiddlewareProxyServer[] = []) => {
+        this.listen(from, to, middlewares);
+        return this.from(to);
+      }
+    };
+
   }
+  public listen(from: string, to: string, middlewares: MiddlewareProxyServer[] = []) {
+    const setToMiddleware = getSetToForRequestProxy(from, to);
+    // PS: специальный символ обозначающий начало основного пути [>] убираем из from
+    this.router.add("ALL", from.replace("[>]", ""), [parseCookie, setToMiddleware, ...middlewares]);
+  }
+
+  // управление сервером
   public launch(ip: string, port: number) {
     if (!this.isLaunch) {
 
