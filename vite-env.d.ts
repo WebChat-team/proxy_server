@@ -4,7 +4,7 @@ interface ImportMetaEnv {
 
   // server
   readonly PORT: number
-  readonly IP: number
+  readonly DOMAIN: string
 
   // protected apis
   readonly AUTH_SERVER: string

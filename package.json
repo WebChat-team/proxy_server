@@ -4,7 +4,7 @@
   "description": "Прокси-сервер, через который проходят все запросы к api-шкам",
   "main": "index.js",
   "scripts": {
-    "dev": "vite-node src/index.ts",
+    "dev": "vite-node src/index.ts --watch",
     "prod:build": "vite build",
     "prod:start": "node dist/index.js"
   },

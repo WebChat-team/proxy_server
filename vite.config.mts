@@ -21,6 +21,8 @@ export default function ({ mode }) {
 
     return defineConfig({
 
+        mode,
+
         server: {
             hmr: true,
         },

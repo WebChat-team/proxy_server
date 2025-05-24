@@ -2,12 +2,12 @@
 // libs ----------------------------------------------------- //
 import Router from "./router";
 import { createServer } from "http";
-import { getSetToForRequestProxy, notFound, proxing, checkAuth, parseCookie } from "./auxiliaryMiddlewares";
+import { getSetToMiddleware, notFound, proxing, checkAuth, parseCookie, debug } from "./auxiliaryMiddlewares";
 
 // types ---------------------------------------------------- //
 import type { RouterRules } from "./router";
 import type { Server, ServerResponse } from "http";
-import type { MiddlewareProxyServer, ProxyServerRequest } from "./types";
+import type { MiddlewareProxyServer, ProxyServerRequest, ConfigProxyServer } from "./types";
 
 // main ===================================================== //
 // Proxy-сервер - сервер, основной задачей которого является
@@ -34,11 +34,13 @@ class ProxyServer {
   private server: Server;
   private isLaunch: boolean;
   private router: Router;
+  private config: ConfigProxyServer = { mode: "production" };
 
-  constructor(rulesRouter: RouterRules = {}) {
+  constructor(rulesRouter: RouterRules = {}, mainConfig: Partial<ConfigProxyServer>) {
     this.server = createServer();
     this.isLaunch = false;
     this.router = new Router(rulesRouter);
+    this.config = Object.assign(this.config, mainConfig);
   }
 
   private requestProcessing(requestProxy: ProxyServerRequest, responseProxy: ServerResponse) {
@@ -71,34 +73,38 @@ class ProxyServer {
   public from(to: string) {
 
     return {
-      listen: (from: string, middlewares: MiddlewareProxyServer[] = []) => {
-        this.listen(from, to, middlewares);
+      listen: (from: string, userMiddlewares: MiddlewareProxyServer[] = []) => {
+        this.listen(from, to, userMiddlewares);
         return this.from(to);
       }
     };
 
   }
-  public listen(from: string, to: string, middlewares: MiddlewareProxyServer[] = []) {
-    const setToMiddleware = getSetToForRequestProxy(from, to);
+  public listen(from: string, to: string, userMiddlewares: MiddlewareProxyServer[] = []) {
+    const systemMiddlewares = [getSetToMiddleware(from, to), parseCookie];
+    if (this.config.mode === "development") systemMiddlewares.unshift(debug);
+
     // PS: специальный символ обозначающий начало основного пути [>] убираем из from
-    this.router.add("ALL", from.replace("[>]", ""), [parseCookie, setToMiddleware, ...middlewares]);
+    this.router.add("ALL", from.replace("[>]", ""), [...systemMiddlewares, ...userMiddlewares]);
   }
 
   // управление сервером
-  public launch(ip: string, port: number) {
+  public launch(hostname: string, port: number) {
+
     if (!this.isLaunch) {
 
       this.isLaunch = true;
 
-      console.info(`Server running at http://${ip}:${port}/`);
+      console.info(`Server running at http://${hostname}:${port}/`);
 
       this.server
-        .listen(port, ip)
+        .listen(port, hostname)
         .on("request", (requestProxy: ProxyServerRequest, responseProxy) => { this.requestProcessing(requestProxy, responseProxy); })
         .on("close", () => console.info("Server is close"))
         .on("error", (error) => console.error(error));
 
     }
+
   }
   public close() {
     if (this.isLaunch) {

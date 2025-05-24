@@ -11,6 +11,9 @@ type ProxyServerRequest = IncomingMessage & {
     cookie: Map<string, string> // расширяется засчет middleware parseCookies
 } 
 type MiddlewareProxyServer = (requestProxy: ProxyServerRequest, responseProxy: ServerResponse) => Promise<any>
+interface ConfigProxyServer {
+    mode: "development" | "production"
+}
 
 // exports ================================================== //
-export type { MiddlewareProxyServer, ProxyServerRequest };
+export type { MiddlewareProxyServer, ProxyServerRequest, ConfigProxyServer };
