@@ -109,7 +109,7 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
         delete copy_headers["host"];
         delete copy_headers["connection"];
         delete copy_headers["cache-control"];
-        copy_headers["origin"] = "http://api.vision.com";
+        copy_headers["origin"] = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
 
         return copy_headers;
 
@@ -155,7 +155,7 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
             {
                 method: "POST",
                 headers: {
-                    "Origin": "http://api.vision.com",
+                    "Origin": `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -177,7 +177,7 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
             {
                 method: "POST",
                 headers: {
-                    "Origin": "http://api.vision.com",
+                    "Origin": `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
@@ -201,8 +201,10 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
             403, "Forbidden",
             {
                 "Set-Cookie": [
-                    `access_token=; domain=.vision.com; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
-                    `refresh_token=; domain=.vision.com; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
+                    // `access_token=; domain=.vision.com; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
+                    // `refresh_token=; domain=.vision.com; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
+                    `access_token=; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
+                    `refresh_token=; HttpOnly; path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
                 ],
             }
         )

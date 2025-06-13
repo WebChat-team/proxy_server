@@ -2,7 +2,7 @@
 import ProxyServer, { checkAuth } from "./lib/proxy_server";
 
 // main ===================================================== //
-const { HOSTNAME, PORT , AUTH_SERVER_ADDRESS, USER_SERVER_ADDRESS, MODE, S3_STORAGE_ADDRESS } = process.env;
+const { HOST, PORT , AUTH_SERVER_ADDRESS, USER_SERVER_ADDRESS, MODE, S3_STORAGE_ADDRESS } = process.env;
 const server = new ProxyServer({ "*": ".*" }, { mode: MODE });
 
 server
@@ -16,4 +16,5 @@ server
 
 server.listen("/auth/[>][*]", AUTH_SERVER_ADDRESS!);
 
-server.launch(HOSTNAME, PORT);
+// @ts-ignore
+server.launch(HOST, PORT);
