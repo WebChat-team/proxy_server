@@ -52,6 +52,8 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
 
         } else {
 
+            console.log(requestProxy.to);
+
             // 1. запрос указанному серверу
             const responseFromServer = await fetch(
                 requestProxy.to,
