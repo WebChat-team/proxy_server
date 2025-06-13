@@ -75,7 +75,6 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
             // responseProxy.writeHead(responseFromServer.status, getSendHeaders(headers));
             responseProxy.end(await responseFromServer.text());
 
-
         }
 
     } catch (error) {
