@@ -39,4 +39,4 @@ USER node
 EXPOSE 3001
 
 # Команда запуска
-CMD ["npm", "start"]
+CMD ["npm", "run", "prod:start"]
