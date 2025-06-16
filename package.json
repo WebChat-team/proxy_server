@@ -1,10 +1,11 @@
 {
-  "name": "proxy_server",
+  "name": "api-vision-ru",
   "version": "0.0.1",
   "description": "Прокси-сервер, через который проходят все запросы к api-шкам",
   "main": "index.js",
   "scripts": {
     "dev": "vite-node src/index.ts --watch",
+    "build": "vite build",
     "prod:build": "vite build",
     "prod:start": "node dist/index.js",
     "start": "node dist/index.js"
