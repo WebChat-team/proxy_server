@@ -1,21 +1,42 @@
-# Сборка проекта
-FROM node:20-alpine AS builder
+# ===== Билд-стадия =====
+# Используем официальный образ Node.js с Alpine (легковесный)
+FROM node:18-bullseye AS builder
 
+# Рабочая директория в контейнере
 WORKDIR /app
+
+# Копируем package.json и package-lock.json (или yarn.lock)
+COPY package*.json ./
+COPY vite.config.mts ./
+
+# Устанавливаем зависимости (включая devDependencies)
+RUN npm i
+
+# Копируем ВСЕ файлы проекта
 COPY . .
 
-RUN npm ci --omit=dev && \ npm run build
+# Собираем проект (если нужно)
+RUN npm run prod:build
 
-# Финальный образ
-FROM node:20-alpine
+# Удаляем devDependencies (опционально)
+RUN npm prune --omit=dev
+
+# ===== Финальная стадия =====
+FROM node:18-bullseye
 
 WORKDIR /app
-ENV MODE=production
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./dist
-COPY --from=builder /app/package.json ./dist
+# Копируем только нужное из builder-стадии
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist ./dist 
+COPY --from=builder /app/src ./src  
 
+# Пользователь node (для безопасности)
 USER node
-EXPOSE 3000
-CMD ["node", "./dist/index.js"]
+
+# Порт, который слушает приложение
+EXPOSE 3001
+
+# Команда запуска
+CMD ["npm", "prod:start"]
