@@ -26,9 +26,6 @@ jobs:
     - name: Install dependencies
       run: npm i
 
-    - name: Build Next.js app
-      run: npm run build
-
     - name: Login to Docker Registry
       run: |
         echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
