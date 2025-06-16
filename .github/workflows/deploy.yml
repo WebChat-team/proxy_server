@@ -6,7 +6,7 @@ on:
     tags: ['v*']
 
 env:
-  REGISTRY: api.vision-ru.ru
+  REGISTRY: registry.vision-ru.ru
   IMAGE_NAME: api-vision-ru
   SSH_DIR: /home/gleb/vision
 
