@@ -1,3 +1,26 @@
+# ===== Билд-стадия =====
+# Используем официальный образ Node.js с Alpine (легковесный)
+FROM node:18-bullseye AS builder
+
+# Рабочая директория в контейнере
+WORKDIR /app
+
+# Копируем package.json и package-lock.json (или yarn.lock)
+COPY package*.json ./
+COPY vite.config.mts ./
+
+# Устанавливаем зависимости (включая devDependencies)
+RUN npm i
+
+# Копируем ВСЕ файлы проекта
+COPY . .
+
+# Собираем проект (если нужно)
+RUN npm run prod:build
+
+# Удаляем devDependencies (опционально)
+RUN npm prune --omit=dev
+
 # ===== Финальная стадия =====
 FROM node:18-bullseye
 
