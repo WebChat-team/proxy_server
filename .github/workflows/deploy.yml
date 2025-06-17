@@ -36,6 +36,7 @@ jobs:
         docker tag $REGISTRY/$IMAGE_NAME:${{ github.sha }} $REGISTRY/$IMAGE_NAME:latest
         docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
         docker push $REGISTRY/$IMAGE_NAME:latest
+        docker rmi $REGISTRY/$IMAGE_NAME:${{ github.sha }}  # Очистка
 
   deploy:
     needs: build-and-push
