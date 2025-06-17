@@ -53,8 +53,8 @@ jobs:
         script: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
           cd $SSH_DIR
-          docker-compose -f pull
-          docker-compose -f down
-          docker-compose -f up -d --force-recreate
+          docker-compose pull
+          docker-compose down
+          docker-compose up -d --force-recreate
           docker image prune -af
-          docker-compose -f ps
+          docker-compose ps
