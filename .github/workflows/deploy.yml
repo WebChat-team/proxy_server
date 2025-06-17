@@ -36,7 +36,7 @@ jobs:
         docker tag $REGISTRY/$IMAGE_NAME:${{ github.sha }} $REGISTRY/$IMAGE_NAME:latest
         docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
         docker push $REGISTRY/$IMAGE_NAME:latest
-        docker rmi $REGISTRY/$IMAGE_NAME:${{ github.sha }}  # Очистка
+        docker rmi $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
   deploy:
     needs: build-and-push
@@ -53,8 +53,8 @@ jobs:
         script: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
           cd $SSH_DIR
-          docker-compose pull
-          docker-compose down
-          docker-compose up -d --force-recreate
+          docker compose -f docker-compose.yml pull
+          docker compose -f docker-compose.yml down --remove-orphans
+          docker compose -f docker-compose.yml up -d --force-recreate
           docker image prune -af
-          docker-compose ps
+          docker compose -f docker-compose.yml ps
