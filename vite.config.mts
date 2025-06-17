@@ -10,13 +10,6 @@ export default defineConfig({
     VitePluginNode({
       adapter: 'nest',
       appPath: './src/index.ts',
-      // Добавляем поддержку process.env
-      tsConfig: {
-        compilerOptions: {
-          target: "esnext",
-          module: "esnext",
-        },
-      },
     })
   ],
   build: {
