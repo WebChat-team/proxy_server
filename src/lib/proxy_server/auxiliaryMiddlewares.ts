@@ -64,8 +64,6 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
                 }
             );
 
-            console.log(responseFromServer);
-
             // 2. возврат ответа от сервера клиенту
             const headers = Object.fromEntries(responseFromServer.headers);
             responseProxy.writeHead(
