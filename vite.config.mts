@@ -26,4 +26,4 @@ export default defineConfig({
       external: ['dotenv'],
     },
   },
-}); 
+});
