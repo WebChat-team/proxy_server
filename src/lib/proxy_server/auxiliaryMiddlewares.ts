@@ -111,7 +111,7 @@ const proxing: MiddlewareProxyServer = async (requestProxy, responseProxy) => {
         delete copy_headers["host"];
         delete copy_headers["connection"];
         delete copy_headers["cache-control"];
-        copy_headers["origin"] = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
+        copy_headers["origin"] = `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`;
 
         return copy_headers;
 
@@ -157,7 +157,7 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
             {
                 method: "POST",
                 headers: {
-                    "Origin": `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
+                    "Origin": `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -179,7 +179,7 @@ const checkAuth: MiddlewareProxyServer = async (requestProxy, responseProxy) => 
             {
                 method: "POST",
                 headers: {
-                    "Origin": `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
+                    "Origin": `https://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
