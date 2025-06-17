@@ -51,10 +51,24 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login $REGISTRY -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
-          cd $SSH_DIR
-          docker compose -f docker-compose.yml pull
-          docker compose -f docker-compose.yml down --remove-orphans
-          docker compose -f docker-compose.yml up -d --force-recreate
-          docker image prune -af
-          docker compose -f docker-compose.yml ps
+          # 1. Абсолютный путь к рабочей директории
+          WORK_DIR="/home/gleb/vision"
+          
+          # 2. Проверка существования файла
+          if [ ! -f "$WORK_DIR/docker-compose.yml" ]; then
+            echo "❌ docker-compose.yml not found in $WORK_DIR"
+            ls -la "$WORK_DIR"
+            exit 1
+          fi
+          
+          # 3. Авторизация в ПРАВИЛЬНОМ registry
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry.vision-ru.ru -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin || exit 1
+          
+          # 4. Основные команды с абсолютными путями
+          cd "$WORK_DIR"
+          docker compose -f "$WORK_DIR/docker-compose.yml" pull
+          docker compose -f "$WORK_DIR/docker-compose.yml" down
+          docker compose -f "$WORK_DIR/docker-compose.yml" up -d --force-recreate
+          
+          # 5. Проверка
+          docker compose -f "$WORK_DIR/docker-compose.yml" ps
